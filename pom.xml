@@ -85,6 +85,27 @@
 					</excludes>
 				</configuration>
 			</plugin>
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>2.46.1</version>
+                <configuration>
+                    <java>
+                        <eclipse>
+                            <!-- Path to your custom Eclipse formatter XML -->
+                            <file>${basedir}/spotless.xml</file>
+                        </eclipse>
+                    </java>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
 		</plugins>
 	</build>
 

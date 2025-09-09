@@ -1,0 +1,26 @@
+replicas: 2
+containerPort: 8080
+
+image:
+  repository: us-south1-docker.pkg.dev/$PROJECT_ID/rcal-ops-scheduler/rcal-ops-scheduler
+  tag: latest
+  pullPolicy: Always
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  path: /
+  loadBalancerIP: ""  # Set a reserved global IP if needed
+
+redeployTimestamp: "{{ now | unixEpoch }}"

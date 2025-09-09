@@ -1,0 +1,22 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-ingress
+  annotations:
+    kubernetes.io/ingress.class: "gce"   # GCP ingress
+    {{- if .Values.ingress.loadBalancerIP }}
+    kubernetes.io/ingress.global-static-ip-name: "{{ .Values.ingress.loadBalancerIP }}"
+    {{- end }}
+spec:
+  rules:
+    - http:
+        paths:
+          - path: {{ .Values.ingress.path }}   # e.g., "/"
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-service
+                port:
+                  number: {{ .Values.service.port }}
+  {{- end }}

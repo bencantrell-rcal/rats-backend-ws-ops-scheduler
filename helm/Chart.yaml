@@ -1,0 +1,5 @@
+apiVersion: v2
+name: rcal-ops-scheduler                 # Replace with the app-specific name
+description: Helm chart for rcal-ops-scheduler Kubernetes deployment
+version: 0.1.0
+appVersion: "1.0.0"
