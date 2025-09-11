@@ -14,7 +14,6 @@ spec:
       labels:
         app: {{ .Release.Name }}
       annotations:
-        # Triggers redeploy on each Helm upgrade by changing this timestamp
         redeploy-timestamp: "{{ .Values.redeployTimestamp }}"
     spec:
       containers:
@@ -23,6 +22,7 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.containerPort }}
+              name: http  # <-- Add a port name for GCE health checks
           resources:
             requests:
               cpu: {{ .Values.resources.requests.cpu }}
@@ -30,3 +30,5 @@ spec:
             limits:
               cpu: {{ .Values.resources.limits.cpu }}
               memory: {{ .Values.resources.limits.memory }}
+          # Ensure the app binds to all interfaces
+          args: ["--server.address=0.0.0.0"]
