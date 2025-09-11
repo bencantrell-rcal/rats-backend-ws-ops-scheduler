@@ -1,8 +1,9 @@
 # rcal-ops-scheduler
 
-<App Purpose>
+This app provides the endpoints and backend logic to support the floor operations scheduler web app, which is an 
+interactive scheduler interface that allows the user to plan and streamline assembly on the operations floor ar Rcal
 
-<App Features>
+App Features:
 
 To run:
 On the taskbar on the right, under Maven->Lifecycle, double click "clean"
