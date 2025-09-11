@@ -1,14 +1,14 @@
-# This is the RELEASE pipeline in the CI/CD process
+# RELEASE pipeline in the CI/CD process
 
 options:
   logging: CLOUD_LOGGING_ONLY
   substitutionOption: 'ALLOW_LOOSE'
 
 substitutions:
-  _ENV: 'test'                # Can be overridden in Cloud Build UI
-  _IMAGE_TAG: 'latest'        # Can be overridden in Cloud Build UI
-  _IP_ADDRESS: 'rats-backend-test-ip'   # Reserved static IP
-  _INGRESS_PATH: '/opsscheduler'       # Path your service exposes
+  _ENV: 'test'
+  _IMAGE_TAG: 'latest'
+  _IP_ADDRESS: 'rats-backend-test-ip'
+  _INGRESS_PATH: '/opsscheduler'
 
 steps:
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -35,10 +35,9 @@ steps:
             ;;
         esac
 
-        # Authenticate with the cluster
         gcloud container clusters get-credentials "$cluster" --region us-south1 --project "$PROJECT_ID"
 
-        # Deploy the service (Deployment + Service only)
+        # Deploy the service
         helm upgrade --install rcal-ops-scheduler-${_ENV} ./helm \
           -f ./helm/env-overrides/values.${_ENV}.yaml \
           --set image.repository=us-south1-docker.pkg.dev/$PROJECT_ID/rcal-ops-scheduler/rcal-ops-scheduler \
@@ -49,36 +48,29 @@ steps:
           --create-namespace \
           --wait --timeout 15m
 
-        # Find index of existing path (if any)
-        INDEX=$(kubectl get ingress central-ingress -n "$namespace" -o json \
-          | jq -r --arg path "${_INGRESS_PATH}" \
-            '.spec.rules[0].http.paths | to_entries[] | select(.value.path == $path) | .key' || true)
+        # Pull the existing central ingress JSON
+        kubectl get ingress central-ingress -n "$namespace" -o json > /tmp/central-ingress.json
 
-        if [ -n "$INDEX" ]; then
-          echo "Removing existing path ${_INGRESS_PATH} at index $INDEX"
-          kubectl patch ingress central-ingress -n "$namespace" --type='json' \
-            -p="[{\"op\": \"remove\", \"path\": \"/spec/rules/0/http/paths/$INDEX\"}]"
-        fi
+        # Add the new path only if it doesn't exist
+        UPDATED_INGRESS=$(jq --arg path "${_INGRESS_PATH}" \
+                             --arg svc "rcal-ops-scheduler-${_ENV}-service" \
+                             '
+                             .spec.rules[0].http.paths |=
+                               (if any(.[]; .path == $path) then .
+                                else . + [{
+                                  "path": $path,
+                                  "pathType": "Prefix",
+                                  "backend": {
+                                    "service": {
+                                      "name": $svc,
+                                      "port": {"number": 80}
+                                    }
+                                  }
+                                }]
+                                end)
+                             ' /tmp/central-ingress.json)
 
-        # Build the JSON patch for adding the new path
-        PATCH=$(cat <<EOF
-        {
-          "op": "add",
-          "path": "/spec/rules/0/http/paths/-",
-          "value": {
-            "path": "${_INGRESS_PATH}",
-            "pathType": "Prefix",
-            "backend": {
-              "service": {
-                "name": "rcal-ops-scheduler-${_ENV}-service",
-                "port": { "number": 80 }
-              }
-            }
-          }
-        }
-  EOF
-  )
-  
-  # Add the new path
-  echo "Adding path ${_INGRESS_PATH} to central-ingress"
-  echo "$PATCH" | kubectl patch ingress central-ingress -n "$namespace" --type='json' -p="[$PATCH]"
+        echo "$UPDATED_INGRESS" > /tmp/central-ingress-updated.json
+
+        # Apply the updated ingress
+        kubectl apply -f /tmp/central-ingress-updated.json
