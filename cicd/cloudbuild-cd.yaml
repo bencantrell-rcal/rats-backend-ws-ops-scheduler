@@ -49,24 +49,36 @@ steps:
           --create-namespace \
           --wait --timeout 15m
 
-        # Pull the existing central ingress values into a temp file
-        helm get values central-ingress -n "$namespace" -o json > /tmp/central-ingress-values.json
+        # Find index of existing path (if any)
+        INDEX=$(kubectl get ingress central-ingress -n "$namespace" -o json \
+          | jq -r --arg path "${_INGRESS_PATH}" \
+            '.spec.rules[0].http.paths | to_entries[] | select(.value.path == $path) | .key' || true)
 
-        # Add the new path only if it doesn't already exist
-        UPDATED_INGRESS=$(jq --arg path "${_INGRESS_PATH}" \
-                              --arg svc "rcal-ops-scheduler-${_ENV}-service" \
-                              '
-                              if any(.ingress.paths[]; .path == $path) then
-                                .
-                              else
-                                .ingress.paths += [{"path": $path, "serviceName": $svc, "servicePort": 80}]
-                              end
-                              ' /tmp/central-ingress-values.json)
+        if [ -n "$INDEX" ]; then
+          echo "Removing existing path ${_INGRESS_PATH} at index $INDEX"
+          kubectl patch ingress central-ingress -n "$namespace" --type='json' \
+            -p="[{\"op\": \"remove\", \"path\": \"/spec/rules/0/http/paths/$INDEX\"}]"
+        fi
 
-        echo "$UPDATED_INGRESS" > /tmp/central-ingress-values-updated.json
-
-        # Upgrade the central ingress with the updated paths
-        helm upgrade central-ingress ./central-ingress \
-          -f /tmp/central-ingress-values-updated.json \
-          --namespace "$namespace" \
-          --wait --timeout 15m
+        # Build the JSON patch for adding the new path
+        PATCH=$(cat <<EOF
+        {
+          "op": "add",
+          "path": "/spec/rules/0/http/paths/-",
+          "value": {
+            "path": "${_INGRESS_PATH}",
+            "pathType": "Prefix",
+            "backend": {
+              "service": {
+                "name": "rcal-ops-scheduler-${_ENV}-service",
+                "port": { "number": 80 }
+              }
+            }
+          }
+        }
+  EOF
+  )
+  
+  # Add the new path
+  echo "Adding path ${_INGRESS_PATH} to central-ingress"
+  echo "$PATCH" | kubectl patch ingress central-ingress -n "$namespace" --type='json' -p="[$PATCH]"
