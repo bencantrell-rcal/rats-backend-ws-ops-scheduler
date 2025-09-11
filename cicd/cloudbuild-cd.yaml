@@ -7,8 +7,8 @@ options:
 substitutions:
   _ENV: 'test'                # Can be overridden in Cloud Build UI
   _IMAGE_TAG: 'latest'        # Can be overridden in Cloud Build UI
-  _IP_ADDRESS: 'rats-backend-test-ip'   # Can be overridden in Cloud Build UI
-  _INGRESS_PATH: '/opsscheduler'       # New: the path your service will expose
+  _IP_ADDRESS: 'rats-backend-test-ip'   # Reserved static IP
+  _INGRESS_PATH: '/opsscheduler'       # Path your service exposes
 
 steps:
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -17,7 +17,7 @@ steps:
     args:
       - -c
       - |
-        apt-get update && apt-get install -y kubectl
+        apt-get update && apt-get install -y kubectl jq
         curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
         case "${_ENV}" in
@@ -35,19 +35,38 @@ steps:
             ;;
         esac
 
+        # Authenticate with the cluster
         gcloud container clusters get-credentials "$cluster" --region us-south1 --project "$PROJECT_ID"
 
-        # Deploy Helm chart with dynamic ingress path
+        # Deploy the service (Deployment + Service only)
         helm upgrade --install rcal-ops-scheduler-${_ENV} ./helm \
           -f ./helm/env-overrides/values.${_ENV}.yaml \
           --set image.repository=us-south1-docker.pkg.dev/$PROJECT_ID/rcal-ops-scheduler/rcal-ops-scheduler \
           --set image.tag=${_IMAGE_TAG} \
           --set image.pullPolicy=Always \
-          --set ingress.loadBalancerIP="${_IP_ADDRESS}" \
-          --set ingress.paths[0].path="${_INGRESS_PATH}" \
-          --set ingress.paths[0].serviceName="rcal-ops-scheduler-${_ENV}-service" \
-          --set ingress.paths[0].servicePort=80 \
           --set redeployTimestamp="$(date +%s)" \
           --namespace "$namespace" \
           --create-namespace \
+          --wait --timeout 15m
+
+        # Pull the existing central ingress values into a temp file
+        helm get values central-ingress -n "$namespace" -o json > /tmp/central-ingress-values.json
+
+        # Add the new path only if it doesn't already exist
+        UPDATED_INGRESS=$(jq --arg path "${_INGRESS_PATH}" \
+                              --arg svc "rcal-ops-scheduler-${_ENV}-service" \
+                              '
+                              if any(.ingress.paths[]; .path == $path) then
+                                .
+                              else
+                                .ingress.paths += [{"path": $path, "serviceName": $svc, "servicePort": 80}]
+                              end
+                              ' /tmp/central-ingress-values.json)
+
+        echo "$UPDATED_INGRESS" > /tmp/central-ingress-values-updated.json
+
+        # Upgrade the central ingress with the updated paths
+        helm upgrade central-ingress ./central-ingress \
+          -f /tmp/central-ingress-values-updated.json \
+          --namespace "$namespace" \
           --wait --timeout 15m

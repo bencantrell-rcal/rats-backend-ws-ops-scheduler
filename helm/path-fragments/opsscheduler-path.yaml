@@ -1,0 +1,5 @@
+ingress:
+  paths:
+    - path: /opsscheduler
+      serviceName: rcal-ops-scheduler-test-service
+      servicePort: 80
