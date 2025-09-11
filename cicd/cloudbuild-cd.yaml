@@ -50,4 +50,4 @@ steps:
           --set redeployTimestamp="$(date +%s)" \
           --namespace "$namespace" \
           --create-namespace \
-          --wait
+          --wait --timeout 15m
