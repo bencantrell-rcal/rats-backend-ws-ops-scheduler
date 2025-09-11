@@ -52,25 +52,25 @@ steps:
         kubectl get ingress central-ingress -n "$namespace" -o json > /tmp/central-ingress.json
 
         # Add the new path only if it doesn't exist
-        UPDATED_INGRESS=$(jq --arg path "${_INGRESS_PATH}" \
-                             --arg svc "rcal-ops-scheduler-${_ENV}-service" \
-                             '
-                             .spec.rules[0].http.paths |=
-                               (if any(.[]; .path == $path) then .
-                                else . + [{
-                                  "path": $path,
-                                  "pathType": "Prefix",
-                                  "backend": {
-                                    "service": {
-                                      "name": $svc,
-                                      "port": {"number": 80}
-                                    }
-                                  }
-                                }]
-                                end)
-                             ' /tmp/central-ingress.json)
+        tmp_updated_ingress=$(jq --arg path "${_INGRESS_PATH}" \
+                                 --arg svc "rcal-ops-scheduler-${_ENV}-service" \
+                                 '
+                                 .spec.rules[0].http.paths |=
+                                   (if any(.[]; .path == $path) then .
+                                    else . + [{
+                                      "path": $path,
+                                      "pathType": "Prefix",
+                                      "backend": {
+                                        "service": {
+                                          "name": $svc,
+                                          "port": {"number": 80}
+                                        }
+                                      }
+                                    }]
+                                    end)
+                                 ' /tmp/central-ingress.json)
 
-        echo "$UPDATED_INGRESS" > /tmp/central-ingress-updated.json
+        echo "$tmp_updated_ingress" > /tmp/central-ingress-updated.json
 
         # Apply the updated ingress
         kubectl apply -f /tmp/central-ingress-updated.json
