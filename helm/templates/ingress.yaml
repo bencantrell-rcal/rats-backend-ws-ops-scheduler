@@ -4,7 +4,7 @@ kind: Ingress
 metadata:
   name: {{ .Release.Name }}-ingress
   annotations:
-    kubernetes.io/ingress.class: "gce"   # GCP ingress
+    kubernetes.io/ingress.class: "gce"
     {{- if .Values.ingress.loadBalancerIP }}
     kubernetes.io/ingress.global-static-ip-name: "{{ .Values.ingress.loadBalancerIP }}"
     {{- end }}
@@ -12,11 +12,13 @@ spec:
   rules:
     - http:
         paths:
-          - path: {{ .Values.ingress.path }}   # e.g., "/"
+          {{- range .Values.ingress.paths }}
+          - path: {{ .path }}
             pathType: Prefix
             backend:
               service:
-                name: {{ .Release.Name }}-service
+                name: {{ .serviceName }}
                 port:
-                  number: {{ .Values.service.port }}
-  {{- end }}
+                  number: {{ .servicePort }}
+          {{- end }}
+{{- end }}

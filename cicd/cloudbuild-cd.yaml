@@ -8,6 +8,7 @@ substitutions:
   _ENV: 'test'                # Can be overridden in Cloud Build UI
   _IMAGE_TAG: 'latest'        # Can be overridden in Cloud Build UI
   _IP_ADDRESS: 'rats-backend-test-ip'   # Can be overridden in Cloud Build UI
+  _INGRESS_PATH: '/opsscheduler'       # New: the path your service will expose
 
 steps:
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -36,13 +37,16 @@ steps:
 
         gcloud container clusters get-credentials "$cluster" --region us-south1 --project "$PROJECT_ID"
 
-        # Deploy Helm chart with Ingress static IP
+        # Deploy Helm chart with dynamic ingress path
         helm upgrade --install rcal-ops-scheduler-${_ENV} ./helm \
           -f ./helm/env-overrides/values.${_ENV}.yaml \
           --set image.repository=us-south1-docker.pkg.dev/$PROJECT_ID/rcal-ops-scheduler/rcal-ops-scheduler \
           --set image.tag=${_IMAGE_TAG} \
           --set image.pullPolicy=Always \
           --set ingress.loadBalancerIP="${_IP_ADDRESS}" \
+          --set ingress.paths[0].path="${_INGRESS_PATH}" \
+          --set ingress.paths[0].serviceName="rcal-ops-scheduler-${_ENV}-service" \
+          --set ingress.paths[0].servicePort=80 \
           --set redeployTimestamp="$(date +%s)" \
           --namespace "$namespace" \
           --create-namespace \

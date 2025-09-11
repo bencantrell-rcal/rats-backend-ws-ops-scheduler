@@ -20,7 +20,11 @@ service:
 
 ingress:
   enabled: true
-  path: /
-  loadBalancerIP: ""  # Set a reserved global IP if needed
+  loadBalancerIP: rats-backend-test-ip
+  paths:
+    - path: /opsscheduler
+      serviceName: rcal-ops-scheduler-test-service
+      servicePort: 80
+
 
 redeployTimestamp: "{{ now | unixEpoch }}"
