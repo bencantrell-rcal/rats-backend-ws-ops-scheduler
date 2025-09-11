@@ -53,7 +53,7 @@ steps:
 
         # Add the new path only if it doesn't exist
         tmp_updated_ingress=$(jq --arg path "${_INGRESS_PATH}" \
-                                 --arg svc "rcal-ops-scheduler-${_ENV}-service" \
+                                 --arg svc "rcal-ops-scheduler-${_ENV}-deployment" \
                                  '
                                  .spec.rules[0].http.paths |=
                                    (if any(.[]; .path == $path) then .
