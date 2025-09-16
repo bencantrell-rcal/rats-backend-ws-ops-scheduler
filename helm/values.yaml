@@ -20,7 +20,6 @@ service:
 
 ingress:
   enabled: true
-  loadBalancerIP: rats-backend-test-ip
   paths:
     - path: /api/opsscheduler/(.*)
       serviceName: rcal-ops-scheduler-test-service
