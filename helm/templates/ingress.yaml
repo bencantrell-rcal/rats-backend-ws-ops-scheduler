@@ -1,8 +1,8 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: opsscheduler-ingress
-  namespace: rcal-test
+  name: {{ .Release.Name }}-ingress
+  namespace: {{ .Release.Namespace }}
   annotations:
     kubernetes.io/ingress.class: "nginx"
     nginx.ingress.kubernetes.io/rewrite-target: /$1
@@ -10,10 +10,10 @@ spec:
   rules:
     - http:
         paths:
-          - path: /api/opsscheduler/(.*)
+          - path: {{ (index .Values.ingress.paths 0).path }}
             pathType: ImplementationSpecific
             backend:
               service:
-                name: rcal-ops-scheduler-test-service
+                name: {{ (index .Values.ingress.paths 0).serviceName }}
                 port:
-                  number: 80
+                  number: {{ (index .Values.ingress.paths 0).servicePort }}

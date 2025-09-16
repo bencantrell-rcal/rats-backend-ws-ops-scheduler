@@ -1,8 +1,17 @@
 image:
   tag: test-latest
+
 replicas: 1
 containerPort: 8080
 
 service:
   type: ClusterIP
   port: 80
+
+ingress:
+  enabled: true
+  loadBalancerIP: rats-backend-test-ip
+  paths:
+    - path: /api/opsscheduler/(.*)
+      serviceName: rcal-ops-scheduler-test-service
+      servicePort: 80

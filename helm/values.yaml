@@ -22,9 +22,8 @@ ingress:
   enabled: true
   loadBalancerIP: rats-backend-test-ip
   paths:
-    - path: /opsscheduler
+    - path: /api/opsscheduler/(.*)
       serviceName: rcal-ops-scheduler-test-service
       servicePort: 80
-
 
 redeployTimestamp: "{{ now | unixEpoch }}"
