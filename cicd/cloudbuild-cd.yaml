@@ -1,14 +1,12 @@
-# RELEASE pipeline in the CI/CD process
+# This is the RELEASE pipeline in the CI/CD process
 
 options:
   logging: CLOUD_LOGGING_ONLY
   substitutionOption: 'ALLOW_LOOSE'
 
 substitutions:
-  _ENV: 'test'
-  _IMAGE_TAG: 'latest'
-  _IP_ADDRESS: 'rats-backend-test-ip'
-  _INGRESS_PATH: '/opsscheduler'
+  _ENV: 'test'                # Can be overridden in Cloud Build UI
+  _IMAGE_TAG: 'latest'        # Can be overridden in Cloud Build UI
 
 steps:
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -17,7 +15,7 @@ steps:
     args:
       - -c
       - |
-        apt-get update && apt-get install -y kubectl jq
+        apt-get update && apt-get install -y kubectl
         curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
         case "${_ENV}" in
@@ -37,40 +35,14 @@ steps:
 
         gcloud container clusters get-credentials "$cluster" --region us-south1 --project "$PROJECT_ID"
 
-        # Deploy the service
+        # Deploy Helm chart with Ingress static IP
         helm upgrade --install rcal-ops-scheduler-${_ENV} ./helm \
           -f ./helm/env-overrides/values.${_ENV}.yaml \
           --set image.repository=us-south1-docker.pkg.dev/$PROJECT_ID/rcal-ops-scheduler/rcal-ops-scheduler \
           --set image.tag=${_IMAGE_TAG} \
           --set image.pullPolicy=Always \
+          --set ingress.path="/api/rcal-ops-scheduler" \
           --set redeployTimestamp="$(date +%s)" \
           --namespace "$namespace" \
           --create-namespace \
-          --wait --timeout 15m
-
-        # Pull the existing central ingress JSON
-        kubectl get ingress central-ingress -n "$namespace" -o json > /tmp/central-ingress.json
-
-        # Add the new path only if it doesn't exist
-        tmp_updated_ingress=$(jq --arg path "${_INGRESS_PATH}" \
-                                 --arg svc "rcal-ops-scheduler-${_ENV}-deployment" \
-                                 '
-                                 .spec.rules[0].http.paths |=
-                                   (if any(.[]; .path == $path) then .
-                                    else . + [{
-                                      "path": $path,
-                                      "pathType": "Prefix",
-                                      "backend": {
-                                        "service": {
-                                          "name": $svc,
-                                          "port": {"number": 80}
-                                        }
-                                      }
-                                    }]
-                                    end)
-                                 ' /tmp/central-ingress.json)
-
-        echo "$tmp_updated_ingress" > /tmp/central-ingress-updated.json
-
-        # Apply the updated ingress
-        kubectl apply -f /tmp/central-ingress-updated.json
+          --atomic --wait
