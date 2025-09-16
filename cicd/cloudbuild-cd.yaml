@@ -41,7 +41,7 @@ steps:
           --set image.repository=us-south1-docker.pkg.dev/$PROJECT_ID/rcal-ops-scheduler/rcal-ops-scheduler \
           --set image.tag=${_IMAGE_TAG} \
           --set image.pullPolicy=Always \
-          --set ingress.path="/api/opsscheduler"
+          --set ingress.path="/api/opsscheduler" \
           --set redeployTimestamp="$(date +%s)" \
           --namespace "$namespace" \
           --create-namespace \
