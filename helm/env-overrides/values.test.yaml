@@ -11,6 +11,9 @@ service:
 ingress:
   enabled: true
   paths:
+    - path: /api/opsscheduler/v3/api-docs
+      serviceName: rats-backend-ws-ops-scheduler-test-service
+      servicePort: 80
     - path: /api/opsscheduler/(.*)
       serviceName: rats-backend-ws-ops-scheduler-test-service
       servicePort: 80

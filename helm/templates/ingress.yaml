@@ -10,10 +10,19 @@ spec:
   rules:
     - http:
         paths:
-          - path: {{ (index .Values.ingress.paths 0).path }}
-            pathType: ImplementationSpecific
+          # Swagger docs (do not strip /api/opsscheduler)
+          - path: /api/opsscheduler/v3/api-docs
+            pathType: Prefix
             backend:
               service:
                 name: {{ (index .Values.ingress.paths 0).serviceName }}
                 port:
                   number: {{ (index .Values.ingress.paths 0).servicePort }}
+          # All other endpoints (strip prefix like before)
+          - path: {{ (index .Values.ingress.paths 1).path }}
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ (index .Values.ingress.paths 1).serviceName }}
+                port:
+                  number: {{ (index .Values.ingress.paths 1).servicePort }}
