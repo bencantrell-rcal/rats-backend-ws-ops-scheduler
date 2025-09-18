@@ -1,28 +1,22 @@
+{{- if .Values.ingress.enabled }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ .Release.Name }}-ingress
   namespace: {{ .Release.Namespace }}
   annotations:
-    kubernetes.io/ingress.class: "nginx"
-    nginx.ingress.kubernetes.io/rewrite-target: /$1
+{{ toYaml .Values.ingress.annotations | indent 4 }}
 spec:
   rules:
     - http:
         paths:
-          # Swagger docs (do not strip /api/opsscheduler)
-          - path: /api/opsscheduler/v3/api-docs
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ (index .Values.ingress.paths 0).serviceName }}
-                port:
-                  number: {{ (index .Values.ingress.paths 0).servicePort }}
-          # All other endpoints (strip prefix like before)
-          - path: {{ (index .Values.ingress.paths 1).path }}
+{{- range .Values.ingress.paths }}
+          - path: {{ .path }}
             pathType: ImplementationSpecific
             backend:
               service:
-                name: {{ (index .Values.ingress.paths 1).serviceName }}
+                name: {{ .serviceName }}
                 port:
-                  number: {{ (index .Values.ingress.paths 1).servicePort }}
+                  number: {{ .servicePort }}
+{{- end }}
+{{- end }}

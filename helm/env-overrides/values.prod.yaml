@@ -10,10 +10,22 @@ service:
 
 ingress:
   enabled: true
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
   paths:
-    - path: /api/opsscheduler/v3/api-docs
+    # Swagger docs JSON
+    - path: /api/opsscheduler/v3/api-docs(/|$)(.*)
       serviceName: rats-backend-ws-ops-scheduler-prod-service
       servicePort: 80
-    - path: /api/opsscheduler/(.*)
+
+    # Swagger UI assets
+    - path: /api/opsscheduler/swagger-ui(/|$)(.*)
+      serviceName: rats-backend-ws-ops-scheduler-prod-service
+      servicePort: 80
+
+    # All other endpoints
+    - path: /api/opsscheduler(/|$)(.*)
       serviceName: rats-backend-ws-ops-scheduler-prod-service
       servicePort: 80
