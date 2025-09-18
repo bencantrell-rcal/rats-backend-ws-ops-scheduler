@@ -36,9 +36,9 @@ steps:
         gcloud container clusters get-credentials "$cluster" --region us-south1 --project "$PROJECT_ID"
 
         # Deploy Helm chart with Ingress static IP
-        helm upgrade --install rcal-ops-scheduler-${_ENV} ./helm \
+        helm upgrade --install rats-backend-ws-ops-scheduler-${_ENV} ./helm \
           -f ./helm/env-overrides/values.${_ENV}.yaml \
-          --set image.repository=us-south1-docker.pkg.dev/$PROJECT_ID/rcal-ops-scheduler/rcal-ops-scheduler \
+          --set image.repository=us-south1-docker.pkg.dev/$PROJECT_ID/rats-backend-ws-ops-scheduler/rats-backend-ws-ops-scheduler \
           --set image.tag=${_IMAGE_TAG} \
           --set image.pullPolicy=Always \
           --set ingress.path="/api/opsscheduler" \

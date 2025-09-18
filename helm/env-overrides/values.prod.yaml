@@ -12,5 +12,5 @@ ingress:
   enabled: true
   paths:
     - path: /api/opsscheduler/(.*)
-      serviceName: rcal-ops-scheduler-prod-service
+      serviceName: rats-backend-ws-ops-scheduler-prod-service
       servicePort: 80

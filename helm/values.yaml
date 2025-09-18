@@ -2,7 +2,7 @@ replicas: 2
 containerPort: 8080
 
 image:
-  repository: us-south1-docker.pkg.dev/$PROJECT_ID/rcal-ops-scheduler/rcal-ops-scheduler
+  repository: us-south1-docker.pkg.dev/$PROJECT_ID/rats-backend-ws-ops-scheduler/rats-backend-ws-ops-scheduler
   tag: latest
   pullPolicy: Always
 
@@ -22,7 +22,7 @@ ingress:
   enabled: true
   paths:
     - path: /api/opsscheduler/(.*)
-      serviceName: rcal-ops-scheduler-test-service
+      serviceName: rats-backend-ws-ops-scheduler-test-service
       servicePort: 80
 
 redeployTimestamp: "{{ now | unixEpoch }}"

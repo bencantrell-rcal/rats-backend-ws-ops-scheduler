@@ -9,9 +9,9 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.rcal</groupId>
-	<artifactId>rcal-ops-scheduler</artifactId>
+	<artifactId>rats-backend-ws-ops-scheduler</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>rcal-ops-scheduler</name>
+	<name>rats-backend-ws-ops-scheduler</name>
 	<description>Rcal Products operation Scheduler</description>
 	<url/>
 	<licenses>

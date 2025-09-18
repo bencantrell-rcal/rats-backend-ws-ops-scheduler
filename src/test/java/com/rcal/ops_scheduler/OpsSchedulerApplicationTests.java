@@ -1,10 +1,10 @@
-package com.rcal.rcal_ops_scheduler;
+package com.rcal.ops_scheduler;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class RcalOpsSchedulerApplicationTests{
+class OpsSchedulerApplicationTests {
 
   @Test
   void contextLoads(){
