@@ -13,7 +13,9 @@ public class SecurityConfiguration{
   // ---------------------------------------------------------------------------
   @Bean
   public WebSecurityCustomizer webSecurityCustomizer(){
-    return (web) -> web.ignoring().requestMatchers("/api/opsscheduler/swagger-ui/**",
-        "/api/opsscheduler/v3/api-docs/**","/api/opsscheduler/swagger-ui.html");
+    return (web) -> web.ignoring().requestMatchers(
+            "/swagger-ui/**",
+            "/v3/api-docs/**",
+            "/swagger-ui.html");
   }
 }
